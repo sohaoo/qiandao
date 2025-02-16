@@ -10,19 +10,18 @@ import time
 from sqlalchemy import (INTEGER, Column, Integer, String, Text, delete, select,
                         text, update)
 from sqlalchemy.dialects.mysql import MEDIUMBLOB, TINYINT
-from sqlalchemy.engine import Result
 
-from .basedb import AlchemyMixin, BaseDB
+from db.basedb import AlchemyMixin, BaseDB
 
 
-class Tpl(BaseDB,AlchemyMixin):
+class Tpl(BaseDB, AlchemyMixin):
     '''
     tpl db
 
     id, userid, siteurl, sitename, banner, disabled, public, fork, har, tpl, variables, interval, note, ctime, mtime, atime, last_success
     '''
     __tablename__ = 'tpl'
-    
+
     id = Column(Integer, primary_key=True)
     disabled = Column(TINYINT(1), nullable=False, server_default=text("'0'"))
     public = Column(TINYINT(1), nullable=False, server_default=text("'0'"))
@@ -52,23 +51,23 @@ class Tpl(BaseDB,AlchemyMixin):
         now = time.time()
 
         insert = dict(
-                userid = userid,
-                siteurl = None,
-                sitename = None,
-                banner = None,
-                disabled = 0,
-                public = 0,
-                fork = None,
-                har = har,
-                tpl = tpl,
-                variables = variables,
-                init_env = init_env,
-                interval = interval,
-                ctime = now,
-                mtime = now,
-                atime = now,
-                last_success = None,
-                )
+            userid=userid,
+            siteurl=None,
+            sitename=None,
+            banner=None,
+            disabled=0,
+            public=0,
+            fork=None,
+            har=har,
+            tpl=tpl,
+            variables=variables,
+            init_env=init_env,
+            interval=interval,
+            ctime=now,
+            mtime=now,
+            atime=now,
+            last_success=None,
+        )
         return self._insert(Tpl(**insert), sql_session=sql_session)
 
     def mod(self, id, sql_session=None, **kwargs):
@@ -82,20 +81,20 @@ class Tpl(BaseDB,AlchemyMixin):
             _fields = (getattr(Tpl, field) for field in fields)
 
         smtm = select(_fields).where(Tpl.id == id)
-        
+
         result = await self._get(smtm, one_or_none=one_or_none, first=first, sql_session=sql_session)
         if to_dict and result is not None:
-            return self.to_dict(result,fields)
+            return self.to_dict(result, fields)
         return result
 
     async def incr_success(self, id, sql_session=None):
-        result = await self._execute(text('UPDATE tpl SET success_count=success_count+1, last_success=:last_success WHERE id=:id').\
-            bindparams(id=int(id), last_success=int(time.time())), sql_session=sql_session)
+        result = await self._execute(text('UPDATE tpl SET success_count=success_count+1, last_success=:last_success WHERE id=:id').
+                                     bindparams(id=int(id), last_success=int(time.time())), sql_session=sql_session)
         return result.rowcount
-            
+
     async def incr_failed(self, id, sql_session=None):
-        result = await self._execute(text('UPDATE tpl SET failed_count=failed_count+1 WHERE id=:id').\
-            bindparams(id=int(id)), sql_session=sql_session)
+        result = await self._execute(text('UPDATE tpl SET failed_count=failed_count+1 WHERE id=:id').
+                                     bindparams(id=int(id)), sql_session=sql_session)
         return result.rowcount
 
     async def list(self, fields=None, limit=None, to_dict=True, sql_session=None, **kwargs):
@@ -103,18 +102,18 @@ class Tpl(BaseDB,AlchemyMixin):
             _fields = Tpl
         else:
             _fields = (getattr(Tpl, field) for field in fields)
-        
+
         smtm = select(_fields)
-        
+
         for key, value in kwargs.items():
             smtm = smtm.where(getattr(Tpl, key) == value)
-            
+
         if limit:
             smtm = smtm.limit(limit)
 
         result = await self._get(smtm, sql_session=sql_session)
         if to_dict and result is not None:
-            return [self.to_dict(row,fields) for row in result]
+            return [self.to_dict(row, fields) for row in result]
         return result
 
     def delete(self, id, sql_session=None):
